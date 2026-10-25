@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Where did my money go?</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef1f0;
+      --surface: #fff;
+      --ink: #16262a;
+      --muted: #5d6f73;
+      --line: #d5dcdb;
+      --accent: #0f5c58;
+      --warn: #c4541a;
+      --bar: #0f5c58;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    @media (prefers-color-scheme:dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f1a1c;
+        --surface: #172528;
+        --ink: #e6efee;
+        --muted: #93a8ab;
+        --line: #2a3d40;
+        --accent: #5fc7bf;
+        --warn: #f08a54;
+        --bar: #5fc7bf
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0f1a1c;
+      --surface: #172528;
+      --ink: #e6efee;
+      --muted: #93a8ab;
+      --line: #2a3d40;
+      --accent: #5fc7bf;
+      --warn: #f08a54;
+      --bar: #5fc7bf
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 "DM Sans", system-ui, sans-serif
+    }
+
+    main {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 24px 16px 56px
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 5vw, 2.6rem);
+      line-height: 1.1;
+      margin: 0 0 8px;
+      letter-spacing: -.02em
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      margin: 0 0 12px
+    }
+
+    .lead {
+      color: var(--muted);
+      margin: 0 0 24px;
+      max-width: 62ch
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 1fr 1fr
+    }
+
+    @media(max-width:700px) {
+      .grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 10px;
+      font: inherit;
+      font-size: .85rem;
+      resize: vertical
+    }
+
+    button {
+      font: inherit;
+      font-weight: 500;
+      background: var(--accent);
+      color: var(--bg);
+      border: 0;
+      border-radius: 8px;
+      padding: 9px 14px;
+      cursor: pointer
+    }
+
+    button.ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent)
+    }
+
+    button:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    input:focus-visible {
+      outline: 3px solid var(--warn);
+      outline-offset: 2px
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 12px
+    }
+
+    .muted {
+      color: var(--muted)
+    }
+
+    small {
+      color: var(--muted)
+    }
+
+    #out {
+      display: none;
+      margin-top: 28px
+    }
+
+    .totals {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px
+    }
+
+    @media(max-width:700px) {
+      .totals {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+
+    .totals b {
+      display: block;
+      font-size: 1.5rem;
+      letter-spacing: -.01em
+    }
+
+    .cat {
+      display: grid;
+      grid-template-columns: 150px 1fr 90px;
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0;
+      font-size: .92rem
+    }
+
+    @media(max-width:520px) {
+      .cat {
+        grid-template-columns: 100px 1fr 76px
+      }
+    }
+
+    .track {
+      background: var(--bg);
+      border-radius: 4px;
+      height: 14px;
+      overflow: hidden
+    }
+
+    .fill {
+      height: 100%;
+      background: var(--bar);
+      border-radius: 4px
+    }
+
+    .cat span:last-child {
+      text-align: right;
+      font-variant-numeric: tabular-nums
+    }
+
+    .scroll {
+      overflow-x: auto
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap
+    }
+
+    td.n,
+    th.n {
+      text-align: right;
+      font-variant-numeric: tabular-nums
+    }
+
+    select {
+      font: inherit;
+      font-size: .82rem;
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 3px;
+      max-width: 190px
+    }
+
+    .tip {
+      border-left: 4px solid var(--warn);
+      padding: 4px 12px;
+      margin: 10px 0
+    }
+
+    /* PDF Loader & Progress Styles */
+    .loader-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .88rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .progress-bar-wrap {
+      width: 120px;
+      height: 6px;
+      background: var(--line);
+      border-radius: 3px;
+      overflow: hidden;
+      display: inline-block;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.15s ease-out;
+    }
+
+    /* Friendly Error Banner */
+    .error-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(196, 84, 26, 0.12);
+      border: 1px solid var(--warn);
+      color: var(--warn);
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 14px;
+      font-size: .9rem;
+    }
+    .error-banner button.close-err {
+      background: transparent;
+      border: 0;
+      color: var(--warn);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+
+    /* Modal Backdrop & Dialog */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .modal-box {
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      max-width: 440px;
+      width: 100%;
+      padding: 20px 22px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+      animation: slideUp 0.2s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: -.01em;
+    }
+    .modal-close {
+      background: transparent;
+      border: 0;
+      font-size: 1.35rem;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 2px 6px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .modal-close:hover {
+      color: var(--ink);
+    }
+    .modal-error {
+      background: rgba(196, 84, 26, 0.12);
+      border-left: 3px solid var(--warn);
+      color: var(--warn);
+      padding: 7px 10px;
+      border-radius: 4px;
+      font-size: .85rem;
+      margin: 10px 0;
+    }
+    .pwd-field-wrap {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .pwd-field-wrap input {
+      flex: 1;
+      font: inherit;
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
+  </style>
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.mjs';
+    window.pdfjsLib = pdfjsLib;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.min.mjs';
+  </script>
+</head>
+
+<body>
+  <main>
+    <h1>Where did my money go?</h1>
+    <p class="lead">Paste your bank statement text (or upload a CSV) and any bank SMS messages. It reads everything
+      inside your browser; nothing is uploaded.</p>
+    <div class="grid">
+      <section class="box">
+        <h2>Bank statement</h2>
+        <textarea id="stmt"
+          placeholder="Paste the statement text here: Sr No, Date, Remarks, Debit/Credit, Balance"></textarea>
+        <div class="row"><input type="file" id="file" accept=".csv,.txt,.pdf" aria-label="Statement file"></div>
+      </section>
+      <section class="box">
+        <h2>Bank SMS (optional)</h2>
+        <textarea id="sms" placeholder="Rs 450.00 debited from A/c XX1234 on 12-Oct-26 to SWIGGY"></textarea>
+      </section>
+    </div>
+    <div class="row" style="align-items:center;">
+      <button id="go">Analyse spending</button>
+      <div id="loader" class="loader-wrap" style="display:none;" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="loadMsg">Reading PDF...</span>
+        <div id="loadProgress" class="progress-bar-wrap" style="display:none;">
+          <div id="loadFill" class="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="errorBanner" class="error-banner" style="display:none;" role="alert">
+      <span id="errorMsg"></span>
+      <button type="button" class="close-err" id="closeErr" aria-label="Close error">&times;</button>
+    </div>
+
+    <section id="out" aria-live="polite">
+      <p id="check" class="muted"></p>
+      <div class="totals">
+        <div class="box"><small>Income</small><b id="tInc"></b></div>
+        <div class="box"><small>Spent (net of refunds)</small><b id="tSp"></b></div>
+        <div class="box"><small>Invested</small><b id="tInv"></b></div>
+        <div class="box"><small>Kept after spending</small><b id="tKeep"></b></div>
+      </div>
+      <div class="box">
+        <h2>What stands out</h2>
+        <div id="tips"></div>
+      </div>
+      <div class="box" style="margin-top:16px">
+        <h2>Spending by area</h2>
+        <div id="cats"></div><small id="refl"></small>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <div class="box">
+          <h2>Top places you pay</h2>
+          <div id="merch"></div>
+        </div>
+        <div class="box">
+          <h2>Month by month</h2>
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th class="n">Income</th>
+                  <th class="n">Spent</th>
+                  <th class="n">Invested</th>
+                </tr>
+              </thead>
+              <tbody id="months"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="box" style="margin-top:16px">
+        <h2>All transactions</h2>
+        <p class="muted" style="margin-top:0">Wrong category? Change it and everything updates.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Paid to / from</th>
+                <th>Category</th>
+                <th class="n">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div id="pwdModal" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="pwdTitle">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="pwdTitle">Password-Protected Statement</h3>
+          <button type="button" class="modal-close" id="pwdClose" aria-label="Close dialog">&times;</button>
+        </div>
+        <p class="muted" style="margin: 8px 0 10px; font-size: .88rem;">
+          This statement file (<strong id="pwdFileName">statement.pdf</strong>) is password protected. Enter the password to unlock it.
+        </p>
+        <div id="pwdError" class="modal-error" style="display:none;">Incorrect password. Please try again.</div>
+        <div class="pwd-field-wrap">
+          <input type="password" id="pwdInput" placeholder="Enter statement password" autocomplete="off" aria-label="Statement password">
+          <button type="button" id="pwdToggle" class="ghost" style="padding: 6px 12px; font-size: .85rem;" aria-label="Toggle password visibility">Show</button>
+        </div>
+        <div class="tip" style="font-size: .82rem; margin: 10px 0 14px;">
+          <strong>Common password formats:</strong> First 4 letters of your name (in UPPERCASE or lowercase) + Date of Birth (DDMM), or full DOB (DDMMYYYY), or last digits of account/PAN.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="pwdCancel">Cancel</button>
+          <button type="button" id="pwdSubmit">Unlock Statement</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script id="core">
+    //CORE-START
+    const KIND = { "Investments": "invest", "Transfers to people": "xout", "Received from people": "xin", "Investment redemption": "redeem", "Refunds & cashback": "refund", "Salary": "income", "Reimbursements": "income", "Interest & dividends": "income", "Other income": "income" };
+    const kindOf = (c, d) => KIND[c] || (d === "cr" ? "income" : "spend");
+    const RULES = [
+      ["Investments", /mutualfun|groww|zerodha|upstox|indian clearing/],
+      ["Insurance", /gpayinsu|insur/],
+      ["Cash withdrawal", /^cwdr|atm cash/],
+      ["Bank charges", /smschrg|atm card maint|charge/],
+      ["Mobile & bills", /vodafo|\bvi\b|viprevf|bsnl|gpayrecha|gpayutil|billpay|bill pay|cylind|ujvala|cable|airtel|recharge|mbkelectr/],
+      ["Travel & transport", /irctc|makemy|redbus|rapido|uber|\bola\b|\bauto\b|\bquto\b|rik?c?ksh|metro|msrtc|petrol|pertrl|travel1pa/],
+      ["Food delivery", /zomato|swiggy|eatclub|blinki/],
+      ["Entertainment", /distri|bookmyshow|pvr|netflix|hotstar|spotify/],
+      ["Shopping", /flipka|amazon|amznl|myntra|ajio|nykaa|meesho|\bwatch\b/],
+      ["Groceries & vegetables", /dmart|avenue|innovdma|pinedmar|zepto|instamart|star bazaar|kirana|gro[sc]ar|dairy|\b(ande|anda|alu|kande|kanda|milk|dahi|rice|peru|apple|appe|sugar|palak|egg)\b|tamat|tomato|mirchi|nar[ai]+l|nariya|natal|coconu|mutter|vanga|brocol|dhaniy|nimboo|chaoul|fruit|vegetable|sudh/],
+      ["Eating out & snacks", /thal|tahli|food|chay|chai|chach|coffe|dosa|maggi|lassi|panip|gupchu|ice cr|ramen|frankl|batter|shimla|sui dh|cahha|biscui|chips|juice|joice|soda|water|watte|wattr|bottle|pani b|delici|hotel/],
+      ["Personal care", /hairc|cuttin|shampo|shapu|washin|towel|print/],
+      ["Health", /medica|wellne|chashm|pharma|hospital/]];
+    const QR = /paytmqr|^paytm|^q\d|bharatp|yespay|vyapar|bajajpa|^gpay\d|^jiop|^\d{6,}|^\d+@/;
+    const BR = [["Rapido", /rapido/], ["IRCTC", /irctc/], ["Zomato", /zomato/], ["Flipkart", /flipka/], ["Amazon", /amazon|amznl/], ["Groww", /groww/], ["Mutual fund SIP", /mutualfun/], ["District (movies/dining)", /distri/], ["Blinkit", /blinki/], ["DMart / Avenue", /dmart|avenue|innovdma|pinedmar/], ["Vi / Vodafone", /vodafo|\bvi\b|viprevf/], ["MakeMyTrip", /makemy/], ["RedBus", /redbus/], ["Google Pay Insurance", /gpayinsu/], ["Jio shop", /^upi.*\/\/jiop|jiop\//], ["Perfios", /perfios/]];
+    function brand(h, n) { for (const [b, r] of BR) if (r.test(h)) return b; return n || "Unknown" }
+    function classify(rem, dir, amt) {
+      const r = rem.replace(/\s+/g, " ").trim(), h = r.toLowerCase(); let name = "", vpa = "", note = "";
+      if (/^upi\//i.test(r)) { const p = r.split("/"); name = (p[3] || "").trim(); vpa = (p[5] || "").trim().toLowerCase(); note = p.slice(6).join("/") }
+      const nm = name.replace(/\b\w/g, c => c.toUpperCase()).toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+      if (dir === "cr") {
+        if (/perfios/.test(h)) return [amt >= 2000 ? "Salary" : "Reimbursements", "Perfios"];
+        if (/sbint|nach cr inw/.test(h)) return ["Interest & dividends", /sbint/.test(h) ? "Bank interest" : r.replace(/nach cr inw\s*-?\s*/i, "").split(/\d/)[0].trim() || "Dividend"];
+        if (/groww|mutualfun|indian clearing/.test(h)) return ["Investment redemption", "Groww"];
+        if (/irctc|zomato|flipka|amazon|googpaym|gokiwi|kiwicash|bhimcashb|npci|payure|uber|rapido/.test(h)) return ["Refunds & cashback", brand(h, nm)];
+        if (/^(upi|neft|imps)/.test(h)) return ["Received from people", nm || vpa || "Unknown"];
+        return ["Other income", nm || r.slice(0, 24)]
+      }
+      if (/^mumbai$/i.test(name) && amt <= 130) return ["Travel & transport", "Mumbai local/metro/bus"];
+      const hay = /^upi\//i.test(r) ? (name + " " + vpa + " " + note).toLowerCase() : h;
+      for (const [c, re] of RULES) if (re.test(hay)) return [c, c === "Cash withdrawal" ? "ATM cash" : c === "Bank charges" ? "Bank charges" : brand(h, nm || note)];
+      if (/^upi/.test(h)) return [QR.test(vpa) ? "Small shops & street food" : "Transfers to people", nm || vpa || "Unknown"];
+      return ["Other", nm || r.slice(0, 24)]
+    }
+    const num = v => { const n = parseFloat(String(v).replace(/[₹,\s]|Rs\.?|INR/gi, "")); return isNaN(n) ? 0 : n };
+    function pd(s) {
+      let m = s.match(/(\d{2})-(\d{2})-(\d{4})/); if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+      m = s.match(/(\d{1,2})[-\/ .]([A-Za-z]{3})[A-Za-z]*[-\/ .,]*(\d{2,4})/); if (m) { const d = new Date(m[1] + " " + m[2] + " " + (m[3].length === 2 ? "20" + m[3] : m[3])); if (!isNaN(d)) return d }
+      m = s.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/); if (m) return new Date(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]); return null
+    }
+    function parseStatement(T) {
+      T = T.replace(/\r/g, ""); const st = []; let pos = 0;
+      for (let n = 1; ; n++) {
+        const re = new RegExp(n + "\\s+(\\d{2}-\\d{2}-\\d{4})\\s", "g"); re.lastIndex = pos; let m = re.exec(T); while (m && /\d/.test(T[m.index - 1] || "") && !/\.\d{2}$/.test(T.slice(0, m.index))) m = re.exec(T); if (!m) break;
+        st.push({ i: m.index, len: m[0].length, date: m[1], n }); pos = m.index + m[0].length - 1
+      }
+      const out = []; let prev = null, ok = 0, bad = 0;
+      st.forEach((s, k) => {
+        const body = T.slice(s.i + s.len, k + 1 < st.length ? st[k + 1].i : T.length);
+        const pm = body.match(/([\d,]+\.\d{2})\s*(?:₹|Rs\.?)?\s*([\d,]+\.\d{2})/); if (!pm) return;
+        const amt = num(pm[1]), bal = num(pm[2]);
+        const rem = (body.slice(0, pm.index) + " " + body.slice(pm.index + pm[0].length)).replace(/\s+/g, " ").trim();
+        let dir = null;
+        if (prev !== null) { const d = bal - prev; if (Math.abs(Math.abs(d) - amt) < 0.06) { dir = d > 0 ? "cr" : "dr"; ok++ } else bad++ }
+        if (!dir) dir = /\/CR\//.test(rem) ? "cr" : /\/DR\//.test(rem) ? "dr" : /^(cwdr|medr|smschrg|atm)/i.test(rem) ? "dr" : "dr";
+        prev = bal; const [cat, who] = classify(rem, dir, amt);
+        out.push({ date: pd(s.date), amt, dir, desc: who, raw: rem, cat })
+      });
+      return { tx: out, ok, bad, rows: st.length }
+    }
+    function fromCSV(text) {
+      const rows = []; let r = [], f = "", q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++ } else q = false } else f += c }
+        else if (c === '"') q = true; else if (c === ",") { r.push(f); f = "" } else if (c === "\n") { r.push(f); rows.push(r); r = []; f = "" } else if (c !== "\r") f += c
+      }
+      if (f || r.length) { r.push(f); rows.push(r) }
+      const h = rows.findIndex(x => x.some(c => /date/i.test(c)) && x.some(c => /narration|description|particulars|details|remarks/i.test(c))); if (h < 0) return [];
+      const hd = rows[h].map(c => c.toLowerCase()), ix = re => hd.findIndex(c => re.test(c));
+      const iD = ix(/date/), iN = ix(/narration|description|particulars|details|remarks/), iDr = ix(/debit|withdraw/), iCr = ix(/credit|deposit/), iA = ix(/amount/), out = [];
+      for (const x of rows.slice(h + 1)) {
+        const date = pd(x[iD] || ""); if (!date) continue; let o = 0, i = 0;
+        if (iDr >= 0 || iCr >= 0) { o = num(x[iDr]); i = num(x[iCr]) } else if (iA >= 0) { const a = num(x[iA]); if (a < 0 || /dr|debit/i.test(x.join(" "))) o = Math.abs(a); else i = a }
+        const dir = o > 0 ? "dr" : "cr", amt = o > 0 ? o : i; if (!amt) continue; const [cat, who] = classify(x[iN] || "", dir, amt);
+        out.push({ date, amt, dir, desc: who, raw: x[iN] || "", cat })
+      }
+      return out
+    }
+    function fromSMS(text) {
+      const out = [];
+      for (const p of text.split(/\n\s*\n|\n(?=\s*(?:Rs\.?|INR|₹))/i).map(s => s.trim()).filter(Boolean)) {
+        const a = p.match(/(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d+)?)/i); if (!a) continue; const amt = num(a[1]);
+        const o = /debited|spent|paid|sent|withdrawn|purchase/i.test(p), i = /credited|received|deposited|refund/i.test(p); if (!o && !i) continue;
+        const dir = o ? "dr" : "cr", m = p.match(/(?:\bat\b|\bto\b|towards|for)\s+([A-Za-z0-9@.&\- ]{3,30}?)(?=\s+(?:on|ref|upi|avl|bal)|[.,;]|$)/i);
+        const [cat, who] = classify("UPI/0/" + dir.toUpperCase() + "/" + (m ? m[1] : p.slice(0, 30)) + "/x/x/x", dir, amt);
+        out.push({ date: pd(p) || new Date(), amt, dir, desc: m ? m[1] : who, raw: p, cat, sms: true })
+      }
+      return out
+    }
+    function mergeSMS(stm, sms) { return stm.concat(sms.filter(s => !stm.some(t => t.dir === s.dir && Math.abs(t.amt - s.amt) < .01 && Math.abs(t.date - s.date) <= 864e5 * 1.5))) }
+    function summarize(tx) {
+      const S = { inc: 0, spend: 0, ref: 0, inv: 0, red: 0, xo: 0, xi: 0, cats: {}, merch: {}, mon: {}, micro: [], cash: [] };
+      for (const t of tx) {
+        const k = kindOf(t.cat, t.dir), mk = t.date.getFullYear() + "-" + String(t.date.getMonth() + 1).padStart(2, "0");
+        const M = S.mon[mk] || (S.mon[mk] = { inc: 0, spend: 0, inv: 0 });
+        if (k === "income") { S.inc += t.amt; M.inc += t.amt }
+        else if (k === "refund") { S.ref += t.amt; M.spend -= t.amt }
+        else if (k === "invest") { S.inv += t.amt; M.inv += t.amt }
+        else if (k === "redeem") { S.red += t.amt; M.inv -= t.amt }
+        else if (k === "xout") S.xo += t.amt; else if (k === "xin") S.xi += t.amt;
+        else if (k === "spend") {
+          S.spend += t.amt; M.spend += t.amt; S.cats[t.cat] = (S.cats[t.cat] || 0) + t.amt; S.merch[t.desc] = (S.merch[t.desc] || 0) + t.amt;
+          if (t.amt <= 100) S.micro.push(t.amt); if (t.cat === "Cash withdrawal") S.cash.push(t.amt)
+        }
+      }
+      S.net = S.spend - S.ref; S.invNet = S.inv - S.red; return S
+    }
+    //CORE-END
+  </script>
+  <script>
+    const $ = id => document.getElementById(id); let tx = [], meta = "";
+    const inr = n => (n < 0 ? "-" : "") + "₹" + Math.round(Math.abs(n)).toLocaleString("en-IN");
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const CR_CATS = ["Salary", "Reimbursements", "Interest & dividends", "Refunds & cashback", "Investment redemption", "Received from people", "Other income"];
+    const DR_CATS = ["Groceries & vegetables", "Eating out & snacks", "Food delivery", "Travel & transport", "Shopping", "Mobile & bills", "Entertainment", "Health", "Personal care", "Insurance", "Cash withdrawal", "Bank charges", "Small shops & street food", "Investments", "Transfers to people", "Other"];
+    function bars(el, e) { const mx = Math.max(...e.map(x => x[1]), 1); el.innerHTML = e.map(([k, v]) => `<div class="cat"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${Math.max(v, 0) / mx * 100}%"></div></div><span>${inr(v)}</span></div>`).join("") || "<span class='muted'>Nothing yet.</span>" }
+    function render() {
+      const S = summarize(tx), top = o => Object.entries(o).sort((a, b) => b[1] - a[1]);
+      $("check").textContent = meta; $("tInc").textContent = inr(S.inc); $("tSp").textContent = inr(S.net); $("tInv").textContent = inr(S.invNet); $("tKeep").textContent = inr(S.inc - S.net);
+      bars($("cats"), top(S.cats)); $("refl").textContent = `Gross spending ${inr(S.spend)} minus refunds & cashback ${inr(S.ref)}. Investments and transfers to people are not counted as spending.`;
+      bars($("merch"), top(S.merch).slice(0, 8));
+      $("months").innerHTML = Object.entries(S.mon).sort().map(([k, m]) => `<tr><td>${new Date(k + "-01").toLocaleString("en-IN", { month: "short", year: "2-digit" })}</td><td class="n">${inr(m.inc)}</td><td class="n">${inr(m.spend)}</td><td class="n">${inr(m.inv)}</td></tr>`).join("");
+      const tips = [], cs = top(S.cats), nm = Object.keys(S.mon).length || 1;
+      if (S.inc) tips.push(`You kept <b>${Math.round((S.inc - S.net) / S.inc * 100)}%</b> of your income after spending (${inr(S.inc - S.net)} of ${inr(S.inc)}), and put ${inr(S.invNet)} of it into investments.`);
+      if (cs[0]) tips.push(`Biggest area: <b>${esc(cs[0][0])}</b> at ${inr(cs[0][1])} (${Math.round(cs[0][1] / S.spend * 100)}% of spending). Average spending is about <b>${inr(S.net / nm)}</b> a month.`);
+      if (S.micro.length) tips.push(`<b>${S.micro.length}</b> payments of ₹100 or less add up to ${inr(S.micro.reduce((a, b) => a + b, 0))}. Small UPI payments are easy to miss.`);
+      if (S.cash.length) tips.push(`You withdrew ${inr(S.cash.reduce((a, b) => a + b, 0))} in cash over ${S.cash.length} withdrawals. Cash cannot be tracked.`);
+      const big = tx.filter(t => kindOf(t.cat, t.dir) === "spend" && t.dir === "dr").sort((a, b) => b.amt - a.amt).slice(0, 3);
+      if (big.length) tips.push("Largest single expenses: " + big.map(t => `${inr(t.amt)} (${esc(t.desc)}, ${t.date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })})`).join("; ") + ".");
+      const over = Object.entries(S.mon).filter(([k, m]) => m.spend + m.inv > m.inc && m.inc > 0).length;
+      if (over) tips.push(`In ${over} of ${nm} months, spending plus investing was more than that month's income, so you used up your balance.`);
+      if (S.xo + S.xi) tips.push(`Transfers with people: you sent ${inr(S.xo)} and received ${inr(S.xi)}. They are left out of spending, so check big ones in the list below.`);
+      $("tips").innerHTML = tips.map(t => `<div class="tip">${t}</div>`).join("");
+      $("rows").innerHTML = tx.map((t, i) => {
+        const L = t.dir === "cr" ? CR_CATS : DR_CATS;
+        return `<tr><td>${t.date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" })}</td><td title="${esc(t.raw)}">${esc(t.desc).slice(0, 30)}</td><td><select data-i="${i}" aria-label="Category">${L.map(o => `<option${o === t.cat ? " selected" : ""}>${o}</option>`).join("")}</select></td><td class="n" style="color:${t.dir === "cr" ? "var(--accent)" : "inherit"}">${t.dir === "cr" ? "+" : "-"}${inr(t.amt)}</td></tr>`
+      }).join("");
+      $("out").style.display = "block"
+    }
+    $("rows").addEventListener("change", e => { if (e.target.dataset.i != null) { tx[+e.target.dataset.i].cat = e.target.value; render() } });
+    let pdfjsLibPromise = null;
+    function getPdfjsLib() {
+      if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+      if (!pdfjsLibPromise) {
+        pdfjsLibPromise = import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.min.mjs').then(mod => {
+          window.pdfjsLib = mod;
+          mod.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/pdf.worker.min.mjs';
+          return mod;
+        });
+      }
+      return pdfjsLibPromise;
+    }
+
+    async function extractPdfText(file, password = "", onProgress = null) {
+      const pdfjs = await getPdfjsLib();
+      if (onProgress) onProgress({ status: "reading", message: "Reading PDF..." });
+      const data = await file.arrayBuffer();
+      const loadingTask = pdfjs.getDocument({
+        data,
+        password,
+        cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.6.82/cmaps/",
+        cMapPacked: true
+      });
+      const pdf = await loadingTask.promise;
+      const numPages = pdf.numPages;
+      const pagesText = [];
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        if (onProgress) {
+          onProgress({
+            status: "extracting",
+            page: pageNum,
+            total: numPages,
+            message: `Extracting page ${pageNum} of ${numPages}...`
+          });
+        }
+        await new Promise(r => setTimeout(r, 0));
+
+        const page = await pdf.getPage(pageNum);
+        const content = await page.getTextContent();
+        let pageStr = "";
+        let lastY;
+
+        for (const item of content.items) {
+          if ("str" in item) {
+            if (lastY !== undefined && Math.abs(item.transform[5] - lastY) > 5) {
+              pageStr += "\n";
+            } else if (pageStr.length > 0 && !pageStr.endsWith("\n") && !pageStr.endsWith(" ") && !item.str.startsWith(" ")) {
+              pageStr += " ";
+            }
+            pageStr += item.str;
+            lastY = item.transform[5];
+          }
+        }
+        pagesText.push(pageStr);
+        if (page.cleanup) page.cleanup();
+      }
+
+      if (pdf.cleanup) pdf.cleanup();
+      if (pdf.destroy) pdf.destroy();
+
+      return pagesText.join("\n");
+    }
+
+    function openPasswordDialog(fileName, isRetry = false) {
+      return new Promise((resolve) => {
+        const modal = $("pwdModal");
+        const fnEl = $("pwdFileName");
+        const errEl = $("pwdError");
+        const input = $("pwdInput");
+
+        if (fnEl) fnEl.textContent = fileName || "Statement PDF";
+        if (isRetry) {
+          errEl.textContent = "Incorrect password. Please try again.";
+          errEl.style.display = "block";
+        } else {
+          errEl.style.display = "none";
+        }
+        input.value = "";
+        modal.style.display = "flex";
+
+        const submitHandler = () => {
+          const val = input.value;
+          if (!val) {
+            errEl.textContent = "Please enter the password.";
+            errEl.style.display = "block";
+            input.focus();
+            return;
+          }
+          cleanup();
+          modal.style.display = "none";
+          resolve({ password: val });
+        };
+
+        const cancelHandler = () => {
+          cleanup();
+          modal.style.display = "none";
+          resolve({ cancelled: true });
+        };
+
+        const keyHandler = (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            submitHandler();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            cancelHandler();
+          }
+        };
+
+        function cleanup() {
+          $("pwdSubmit").removeEventListener("click", submitHandler);
+          $("pwdCancel").removeEventListener("click", cancelHandler);
+          $("pwdClose").removeEventListener("click", cancelHandler);
+          input.removeEventListener("keydown", keyHandler);
+        }
+
+        $("pwdSubmit").addEventListener("click", submitHandler);
+        $("pwdCancel").addEventListener("click", cancelHandler);
+        $("pwdClose").addEventListener("click", cancelHandler);
+        input.addEventListener("keydown", keyHandler);
+
+        setTimeout(() => input.focus(), 60);
+      });
+    }
+
+    $("pwdToggle").onclick = () => {
+      const input = $("pwdInput");
+      const btn = $("pwdToggle");
+      if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "Hide";
+      } else {
+        input.type = "password";
+        btn.textContent = "Show";
+      }
+    };
+
+    $("closeErr").onclick = () => {
+      hideError();
+    };
+
+    $("file").onchange = () => {
+      hideError();
+    };
+
+    function showLoading(msg, current = 0, total = 0) {
+      const loader = $("loader");
+      const loadMsg = $("loadMsg");
+      const progressWrap = $("loadProgress");
+      const fill = $("loadFill");
+      if (loader) loader.style.display = "inline-flex";
+      if (loadMsg) loadMsg.textContent = msg;
+      if (total > 1 && current > 0) {
+        if (progressWrap) progressWrap.style.display = "inline-block";
+        if (fill) fill.style.width = Math.round((current / total) * 100) + "%";
+      } else {
+        if (progressWrap) progressWrap.style.display = "none";
+      }
+    }
+
+    function hideLoading() {
+      const loader = $("loader");
+      if (loader) loader.style.display = "none";
+    }
+
+    function setBusy(busy) {
+      const btn = $("go");
+      if (btn) {
+        btn.disabled = busy;
+        btn.style.opacity = busy ? "0.6" : "1";
+        btn.style.cursor = busy ? "not-allowed" : "pointer";
+      }
+    }
+
+    function showError(msg) {
+      const banner = $("errorBanner");
+      const msgEl = $("errorMsg");
+      if (banner && msgEl) {
+        msgEl.textContent = msg;
+        banner.style.display = "flex";
+      }
+    }
+
+    function hideError() {
+      const banner = $("errorBanner");
+      if (banner) banner.style.display = "none";
+    }
+
+    async function extractPdfTextWithPassword(file) {
+      let password = "";
+      let isRetry = false;
+
+      while (true) {
+        try {
+          showLoading("Reading PDF...", 0, 0);
+          const text = await extractPdfText(file, password, (prog) => {
+            if (prog.status === "extracting") {
+              showLoading(`Extracting page ${prog.page} of ${prog.total}...`, prog.page, prog.total);
+            } else {
+              showLoading(prog.message || "Reading PDF...", 0, 0);
+            }
+          });
+          return text;
+        } catch (error) {
+          hideLoading();
+          const isPasswordError = error.name === "PasswordException" || 
+                                  error.code === 1 || 
+                                  error.code === 2 || 
+                                  /password/i.test(error.message || "");
+
+          if (isPasswordError) {
+            const dialogRes = await openPasswordDialog(file.name, isRetry || error.code === 2);
+            if (!dialogRes || dialogRes.cancelled) {
+              return null; // User cancelled password dialog
+            }
+            password = dialogRes.password;
+            isRetry = true;
+            continue; // Retry with new password
+          }
+
+          // Friendly errors
+          if (error.name === "InvalidPDFException" || /invalid pdf/i.test(error.message || "")) {
+            showError("Invalid PDF: The selected file does not appear to be a valid PDF document.");
+          } else {
+            showError("Corrupted PDF: Unable to read this PDF document. The file may be damaged or incomplete.");
+          }
+          return null;
+        }
+      }
+    }
+
+    $("go").onclick = async () => {
+      hideError();
+      let text = $("stmt").value;
+      const f = $("file").files[0];
+
+      if (f && f.name.toLowerCase().endsWith(".pdf")) {
+        setBusy(true);
+        const pdfText = await extractPdfTextWithPassword(f);
+        setBusy(false);
+        hideLoading();
+
+        if (pdfText === null) {
+          // Cancelled or error displayed, exit gracefully without false alerts
+          return;
+        }
+
+        if (!pdfText.trim()) {
+          showError("No extractable text found in this PDF. Statements must contain selectable digital text rather than scanned images.");
+          return;
+        }
+
+        text = pdfText;
+      } else if (!text.trim() && f) {
+        setBusy(true);
+        showLoading("Reading file...", 0, 0);
+        try {
+          text = await f.text();
+        } catch (e) {
+          hideLoading();
+          setBusy(false);
+          showError("Could not read file: " + e.message);
+          return;
+        }
+        hideLoading();
+        setBusy(false);
+      }
+
+      showLoading("Processing transactions...", 0, 0);
+      await new Promise(r => setTimeout(r, 10));
+
+      let list = []; meta = "";
+      if (/\d{2}-\d{2}-\d{4}[\s\S]*?(?:₹|Rs\.?)/.test(text) || /Sr\.? ?No/i.test(text) || /\b1\s+\d{2}-\d{2}-\d{4}\b/.test(text)) {
+        const r = parseStatement(text);
+        list = r.tx;
+        meta = `Read ${r.rows} statement rows. Balance check: ${r.ok} of ${r.ok + r.bad} rows add up exactly${r.bad ? `, ${r.bad} could not be verified` : ""}.`;
+      } else if (text.trim()) {
+        list = fromCSV(text);
+      }
+
+      // Fallback: If not parsed yet but text is non-empty, try parseStatement directly
+      if (!list.length && text.trim()) {
+        const r = parseStatement(text);
+        if (r.tx.length) {
+          list = r.tx;
+          meta = `Read ${r.rows} statement rows. Balance check: ${r.ok} of ${r.ok + r.bad} rows add up exactly${r.bad ? `, ${r.bad} could not be verified` : ""}.`;
+        }
+      }
+
+      const s = $("sms").value.trim();
+      if (s) list = mergeSMS(list, fromSMS(s));
+
+      hideLoading();
+
+      if (!list.length) {
+        alert("No transactions found. Paste the statement text with Sr No, Date, Remarks, amount and balance, or upload a CSV, or paste at least one bank SMS.");
+        return;
+      }
+      tx = list;
+      render();
+      $("out").scrollIntoView({ behavior: "smooth" });
+    };
+  </script>
+</body>
+
+</html>
